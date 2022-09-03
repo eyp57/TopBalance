@@ -7,7 +7,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import xyz.efekurbann.inventory.InventoryAPI;
 import xyz.efekurbann.topbalance.commands.MainCommand;
 import xyz.efekurbann.topbalance.objects.TopPlayer;
 import xyz.efekurbann.topbalance.tasks.UpdateTop;
@@ -20,7 +19,6 @@ public final class TopBalancePlugin extends JavaPlugin {
 
     private static TopBalancePlugin instance;
     private final HashMap<Integer, TopPlayer> players = new HashMap<>();
-    private InventoryAPI inventoryAPI;
     private UpdateTop updateTopTask;
 
     @Override
@@ -32,7 +30,6 @@ public final class TopBalancePlugin extends JavaPlugin {
             return;
         }
 
-        inventoryAPI = new InventoryAPI(this);
 
         ConfigManager.load("config.yml");
 
@@ -58,9 +55,6 @@ public final class TopBalancePlugin extends JavaPlugin {
 
     }
 
-    public InventoryAPI getInventoryAPI() {
-        return inventoryAPI;
-    }
 
     @Override
     public void onDisable() {
