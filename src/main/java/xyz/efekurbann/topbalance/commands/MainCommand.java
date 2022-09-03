@@ -33,12 +33,10 @@ public class MainCommand implements CommandExecutor {
 
             if (config.getBoolean("Gui.enabled")) {
                 TopMenu menu = new TopMenu(
-                        plugin.getInventoryAPI(),
-                        "topmenu",
                         Tools.colored(config.getString("Gui.title")),
-                        config.getInt("Gui.size"));
-
+                        config.getInt("Gui.size") / 9);
                 menu.open(player);
+
 
                 return true;
             }

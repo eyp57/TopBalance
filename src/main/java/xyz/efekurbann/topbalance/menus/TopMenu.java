@@ -2,16 +2,15 @@ package xyz.efekurbann.topbalance.menus;
 
 import com.cryptomorin.xseries.SkullUtils;
 import com.cryptomorin.xseries.XMaterial;
+import dev.triumphteam.gui.guis.Gui;
+import dev.triumphteam.gui.guis.GuiItem;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import xyz.efekurbann.inventory.GUI;
-import xyz.efekurbann.inventory.Hytem;
-import xyz.efekurbann.inventory.InventoryAPI;
 import xyz.efekurbann.topbalance.TopBalancePlugin;
 import xyz.efekurbann.topbalance.objects.TopPlayer;
 import xyz.efekurbann.topbalance.utils.ConfigManager;
@@ -21,24 +20,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class TopMenu extends GUI {
+public class TopMenu {
 
     private final TopBalancePlugin plugin;
     private final FileConfiguration config = ConfigManager.get("config.yml");
-
-    public TopMenu(InventoryAPI api, String id, String title, int size) {
-        super(api, id, title, size);
+    private final Gui gui;
+    public TopMenu(String title, int size) {
         this.plugin = TopBalancePlugin.getInstance();
-
+        this.gui = Gui.gui()
+                        .rows(size)
+                        .title(Component.text(title))
+                        .disableAllInteractions()
+                        .create();
         create();
     }
-
     public void create() {
-
         if (config.getBoolean("Gui.items.fill.enabled")){
-            for (int i = 0; i < getSize(); i++){
-                addItem(i, new ItemBuilder(
-                        XMaterial.matchXMaterial(config.getString("Gui.items.fill.material").toUpperCase(Locale.ENGLISH)).get().parseItem()).withName(" ").build());
+            for (int i = 0; i < gui.getRows() * 9; i++){
+                gui.setItem(i, new GuiItem(new ItemBuilder(
+                        XMaterial.matchXMaterial(config.getString("Gui.items.fill.material").toUpperCase(Locale.ENGLISH)).get().parseItem()).withName(" ").build()));
             }
         }
 
@@ -70,53 +70,22 @@ public class TopMenu extends GUI {
                         .withName(config.getString("Gui.items.player-not-found.name"))
                         .withLore(config.getStringList("Gui.items.player-not-found.lore")).build();
             }
-            addItem(slot, item);
+            gui.setItem(slot, new GuiItem(item));
         }
 
 
-        addItem(
+        gui.setItem(
                 config.getInt("Gui.items.close-menu.slot"),
-                new Hytem(new ItemBuilder(XMaterial.valueOf(config.getString("Gui.items.close-menu.material").toUpperCase(Locale.ENGLISH)).parseMaterial())
+                new GuiItem(new ItemBuilder(XMaterial.valueOf(config.getString("Gui.items.close-menu.material").toUpperCase(Locale.ENGLISH)).parseMaterial())
                         .withName(config.getString("Gui.items.close-menu.name"))
-                        .withLore(config.getStringList("Gui.items.close-menu.lore")).build(), (event) ->{
-                    Bukkit.getScheduler().runTaskLater(plugin, ()->{
-                        event.getWhoClicked().closeInventory();
-                    }, 2);
-                })
+                        .withLore(config.getStringList("Gui.items.close-menu.lore")).build(),
+                        (event) -> Bukkit.getScheduler().runTaskLater(plugin,
+                                () -> event.getWhoClicked().closeInventory(), 2))
         );
-
     }
-
-    @Override
-    public void onOpen(InventoryOpenEvent event) {
-        if (config.getBoolean("Messages.gui-opened.status"))
-            event.getPlayer().sendMessage(Tools.colored(config.getString("Messages.gui-opened.message")));
-
-        Player player = (Player) event.getPlayer();
-
-        Tools.getPosition(event.getPlayer().getName()).whenCompleteAsync((selfRank, throwable) -> {
-            TopPlayer topPlayer = plugin.getPlayersMap().get(selfRank);
-
-            if (topPlayer == null) return;
-            List<String> lore = new ArrayList<>();
-            for (String str : config.getStringList("Gui.items.self-item.lore")) {
-                lore.add(str.replace("{rank}", String.valueOf(selfRank+1))
-                        .replace("{name}", player.getName())
-                        .replace("{balance_raw}", String.valueOf(topPlayer.getBalance()))
-                        .replace("{balance}", Tools.formatMoney(topPlayer.getBalance())));
-            }
-
-            if (config.getBoolean("Gui.custom-item")) {
-                addItem(config.getInt("Gui.items.self-item.slot"), new ItemBuilder(
-                        XMaterial.matchXMaterial(config.getString("Gui.items.self-item.material").toUpperCase(Locale.ENGLISH)).get().parseItem())
-                        .withName(config.getString("Gui.items.self-item.name"))
-                        .withLore(lore).build());
-            } else {
-                addItem(config.getInt("Gui.items.self-item.slot"), getSkull(selfRank, "self-item"));
-            }
-        });
+    public void open(HumanEntity player) {
+        this.gui.open(player);
     }
-
     public ItemStack getSkull(Integer number, String path) {
         ItemStack item = XMaterial.PLAYER_HEAD.parseItem();
         ItemMeta meta = item.getItemMeta();
